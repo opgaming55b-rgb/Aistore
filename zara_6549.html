@@ -1,0 +1,2092 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Store — India's Premium AI Assistant Store</title>
+    <style>
+        /* ===== RESET & BASE ===== */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --black: #0a0a0a;
+            --black-light: #121212;
+            --black-card: #1a1a2e;
+            --neon-blue: #00d4ff;
+            --neon-blue-dark: #0088ff;
+            --purple: #7b2ffc;
+            --purple-light: #a855f7;
+            --white: #f0f0f0;
+            --glass-bg: rgba(20, 20, 40, 0.65);
+            --glass-border: rgba(0, 212, 255, 0.15);
+            --shadow-glow: 0 0 40px rgba(0, 212, 255, 0.08);
+            --radius: 20px;
+            --transition: 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            font-size: 16px;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--black);
+            color: var(--white);
+            line-height: 1.6;
+            overflow-x: hidden;
+            cursor: default;
+            min-height: 100vh;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        img {
+            max-width: 100%;
+            display: block;
+        }
+
+        ::selection {
+            background: var(--neon-blue);
+            color: var(--black);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--black);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--neon-blue);
+            border-radius: 10px;
+        }
+
+        /* ===== LOADER ===== */
+        #loader {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: var(--black);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+        }
+        #loader.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .loader-ring {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 4px solid transparent;
+            border-top-color: var(--neon-blue);
+            border-bottom-color: var(--purple);
+            animation: spin 1s linear infinite;
+            position: relative;
+        }
+        .loader-ring::after {
+            content: '';
+            position: absolute;
+            inset: 10px;
+            border-radius: 50%;
+            border: 4px solid transparent;
+            border-left-color: var(--purple-light);
+            border-right-color: var(--neon-blue-dark);
+            animation: spin 0.6s linear infinite reverse;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loader-text {
+            margin-top: 24px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, var(--neon-blue), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: pulse 1.4s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 0.6;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.04);
+            }
+        }
+
+        /* ===== CURSOR GLOW ===== */
+        #cursor-glow {
+            position: fixed;
+            width: 360px;
+            height: 360px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 212, 255, 0.06), transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+            transform: translate(-50%, -50%);
+            transition: left 0.12s ease, top 0.12s ease;
+            will-change: left, top;
+        }
+
+        /* ===== PARTICLES CANVAS ===== */
+        #particles-canvas {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        /* ===== CONTAINER ===== */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ===== NAVBAR ===== */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 14px 0;
+            background: rgba(10, 10, 10, 0.82);
+            backdrop-filter: blur(18px) saturate(1.2);
+            border-bottom: 1px solid rgba(0, 212, 255, 0.06);
+            transition: var(--transition);
+        }
+        .navbar.scrolled {
+            background: rgba(10, 10, 10, 0.94);
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+        }
+
+        .navbar .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        .nav-logo svg {
+            width: 38px;
+            height: 38px;
+            filter: drop-shadow(0 0 12px rgba(0, 212, 255, 0.35));
+        }
+        .nav-logo span {
+            background: linear-gradient(135deg, var(--neon-blue), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            list-style: none;
+        }
+        .nav-links a {
+            padding: 6px 14px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border-radius: 40px;
+            transition: var(--transition);
+            color: rgba(255, 255, 255, 0.7);
+            position: relative;
+        }
+        .nav-links a:hover,
+        .nav-links a.active {
+            color: #fff;
+            background: rgba(0, 212, 255, 0.08);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.04);
+        }
+        .nav-links a.active {
+            color: var(--neon-blue);
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .dark-toggle {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--white);
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            transition: var(--transition);
+        }
+        .dark-toggle:hover {
+            background: rgba(0, 212, 255, 0.12);
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 24px rgba(0, 212, 255, 0.08);
+        }
+
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 6px;
+        }
+        .hamburger span {
+            width: 26px;
+            height: 2.5px;
+            background: var(--white);
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        /* ===== HERO ===== */
+        .hero {
+            padding: 140px 0 80px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -30%;
+            right: -20%;
+            width: 700px;
+            height: 700px;
+            background: radial-gradient(circle, rgba(123, 47, 252, 0.10), transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -20%;
+            left: -10%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(0, 212, 255, 0.07), transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .hero .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-content h1 {
+            font-size: clamp(2.4rem, 6vw, 4.2rem);
+            font-weight: 800;
+            line-height: 1.12;
+            margin-bottom: 18px;
+            background: linear-gradient(135deg, #fff 40%, var(--neon-blue), var(--purple-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-content p {
+            font-size: 1.15rem;
+            color: rgba(255, 255, 255, 0.7);
+            max-width: 520px;
+            margin-bottom: 32px;
+            line-height: 1.7;
+        }
+
+        .hero-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 34px;
+            border-radius: 60px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            font-family: inherit;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--neon-blue), var(--purple));
+            color: #fff;
+            box-shadow: 0 4px 30px rgba(0, 212, 255, 0.25);
+        }
+        .btn-primary:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 50px rgba(0, 212, 255, 0.35);
+        }
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--white);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(6px);
+        }
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: var(--neon-blue);
+            transform: translateY(-3px);
+        }
+        .btn-glow {
+            animation: glow-pulse 2.4s ease-in-out infinite;
+        }
+        @keyframes glow-pulse {
+            0%,
+            100% {
+                box-shadow: 0 4px 30px rgba(0, 212, 255, 0.25);
+            }
+            50% {
+                box-shadow: 0 4px 60px rgba(0, 212, 255, 0.50);
+            }
+        }
+
+        .hero-visual {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .hero-visual .glass-sphere {
+            width: 320px;
+            height: 320px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(0, 212, 255, 0.15), rgba(123, 47, 252, 0.10));
+            border: 1px solid rgba(0, 212, 255, 0.12);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 0 80px rgba(0, 212, 255, 0.06), inset 0 0 80px rgba(123, 47, 252, 0.04);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 7rem;
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-18px);
+            }
+        }
+
+        /* ===== SECTION HEADERS ===== */
+        .section {
+            padding: 80px 0;
+            position: relative;
+            z-index: 1;
+        }
+        .section-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        .section-header h2 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff, var(--neon-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .section-header p {
+            color: rgba(255, 255, 255, 0.55);
+            max-width: 560px;
+            margin: 10px auto 0;
+            font-size: 1.05rem;
+        }
+
+        /* ===== APPS / CARDS ===== */
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+        }
+
+        .app-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 32px 26px 30px;
+            transition: var(--transition);
+            box-shadow: var(--shadow-glow);
+            position: relative;
+            overflow: hidden;
+        }
+        .app-card .combo-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: #fff;
+            font-size: 0.6rem;
+            font-weight: 700;
+            padding: 2px 12px;
+            border-radius: 40px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 12px rgba(238, 90, 36, 0.3);
+        }
+        .app-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 50% 50%, rgba(0, 212, 255, 0.02), transparent 60%);
+            opacity: 0;
+            transition: var(--transition);
+            pointer-events: none;
+        }
+        .app-card:hover::before {
+            opacity: 1;
+        }
+        .app-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(0, 212, 255, 0.25);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 0 40px rgba(0, 212, 255, 0.04);
+        }
+
+        .app-card .icon {
+            font-size: 2.8rem;
+            margin-bottom: 12px;
+            display: inline-block;
+        }
+        .app-card h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .app-card .price {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--neon-blue);
+            margin: 6px 0 2px;
+        }
+        .app-card .validity {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 14px;
+        }
+        .app-card .features {
+            list-style: none;
+            margin: 14px 0 22px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .app-card .features li {
+            background: rgba(0, 212, 255, 0.06);
+            border: 1px solid rgba(0, 212, 255, 0.08);
+            padding: 4px 14px;
+            border-radius: 40px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        .app-card .btn {
+            width: 100%;
+            justify-content: center;
+            padding: 14px;
+            font-size: 0.95rem;
+        }
+
+        /* ===== FEATURES (Phone Automation) ===== */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .feature-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 32px 28px;
+            transition: var(--transition);
+            box-shadow: var(--shadow-glow);
+            position: relative;
+            overflow: hidden;
+        }
+        .feature-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--neon-blue), var(--purple));
+            opacity: 0.4;
+            transition: var(--transition);
+        }
+        .feature-card:hover::after {
+            opacity: 1;
+            height: 4px;
+        }
+        .feature-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(0, 212, 255, 0.2);
+            box-shadow: 0 16px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        .feature-card .feature-icon {
+            font-size: 2.8rem;
+            margin-bottom: 8px;
+        }
+        .feature-card h3 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff, var(--neon-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: inline-block;
+        }
+        .feature-card .feature-tagline {
+            font-size: 0.9rem;
+            color: var(--neon-blue);
+            font-weight: 600;
+            margin-bottom: 16px;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.08);
+            padding-bottom: 12px;
+        }
+        .feature-card .feature-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .feature-card .feature-list li {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            line-height: 1.5;
+        }
+        .feature-card .feature-list li strong {
+            color: #fff;
+            font-weight: 600;
+        }
+        .feature-card .feature-list li .badge {
+            background: rgba(0, 212, 255, 0.10);
+            border: 1px solid rgba(0, 212, 255, 0.08);
+            font-size: 0.65rem;
+            padding: 0 8px;
+            border-radius: 20px;
+            color: var(--neon-blue);
+            font-weight: 600;
+            white-space: nowrap;
+            margin-left: 4px;
+        }
+
+        /* ===== ORDER / QR SECTION ===== */
+        #order {
+            scroll-margin-top: 80px;
+        }
+
+        #order-form {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 40px 36px;
+            max-width: 680px;
+            margin: 0 auto;
+            box-shadow: var(--shadow-glow);
+        }
+
+        .qr-wrapper {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 16px;
+            border: 1px solid rgba(0, 212, 255, 0.08);
+        }
+        .qr-wrapper .qr-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--neon-blue);
+            letter-spacing: 1px;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .qr-wrapper .qr-label .badge {
+            background: rgba(0, 212, 255, 0.12);
+            padding: 2px 14px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            color: #fff;
+        }
+        .qr-wrapper img {
+            display: block;
+            margin: 0 auto;
+            width: 220px;
+            height: 220px;
+            border-radius: 12px;
+            background: #fff;
+            padding: 8px;
+            box-shadow: 0 0 40px rgba(0, 212, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            object-fit: contain;
+        }
+
+        /* === UPI ID DISPLAY === */
+        .upi-box {
+            margin-top: 18px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 10px 16px;
+            background: rgba(0, 212, 255, 0.04);
+            border: 1px solid rgba(0, 212, 255, 0.10);
+            border-radius: 60px;
+            padding: 8px 20px 8px 24px;
+            backdrop-filter: blur(4px);
+            transition: var(--transition);
+        }
+        .upi-box:hover {
+            border-color: rgba(0, 212, 255, 0.25);
+            background: rgba(0, 212, 255, 0.08);
+        }
+        .upi-box .upi-label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 0.5px;
+        }
+        .upi-box .upi-id {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--neon-blue);
+            background: rgba(0, 0, 0, 0.2);
+            padding: 4px 16px;
+            border-radius: 40px;
+            border: 1px solid rgba(0, 212, 255, 0.08);
+            cursor: pointer;
+            transition: var(--transition);
+            letter-spacing: 0.3px;
+            font-family: 'Courier New', monospace;
+        }
+        .upi-box .upi-id:hover {
+            background: rgba(0, 212, 255, 0.12);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.06);
+        }
+        .upi-box .upi-copy-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: none;
+            color: var(--white);
+            padding: 4px 14px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: inherit;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .upi-box .upi-copy-btn:hover {
+            background: var(--neon-blue);
+            color: var(--black);
+            border-color: var(--neon-blue);
+        }
+
+        .upi-box .upi-open-btn {
+            background: rgba(0, 212, 255, 0.10);
+            border: 1px solid rgba(0, 212, 255, 0.15);
+            color: var(--neon-blue);
+            padding: 4px 14px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: inherit;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .upi-box .upi-open-btn:hover {
+            background: rgba(0, 212, 255, 0.20);
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.08);
+        }
+
+        .qr-wrapper .qr-sub {
+            margin-top: 14px;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        .qr-wrapper .qr-sub strong {
+            color: var(--neon-blue);
+            font-weight: 600;
+        }
+        .qr-wrapper .qr-disclaimer {
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.18);
+            margin-top: 6px;
+        }
+
+        .order-divider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 28px 0 22px;
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+        }
+        .order-divider::before,
+        .order-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        #order-form .form-group {
+            margin-bottom: 20px;
+        }
+        #order-form label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 6px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        #order-form label .required {
+            color: var(--neon-blue);
+            margin-left: 2px;
+        }
+        #order-form input,
+        #order-form select {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(0, 0, 0, 0.4);
+            color: var(--white);
+            font-size: 1rem;
+            transition: var(--transition);
+            font-family: inherit;
+            outline: none;
+        }
+        #order-form input:focus,
+        #order-form select:focus {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.06);
+        }
+        #order-form input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+        #order-form select option {
+            background: var(--black);
+        }
+
+        .utr-hint {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.35);
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .utr-hint .copy-hint {
+            color: var(--neon-blue);
+            font-weight: 500;
+        }
+
+        #order-form .btn-submit {
+            width: 100%;
+            justify-content: center;
+            padding: 16px;
+            font-size: 1.05rem;
+            margin-top: 6px;
+        }
+
+        /* ===== FAQ ===== */
+        .faq-list {
+            max-width: 760px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .faq-item {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+        .faq-item:hover {
+            border-color: rgba(0, 212, 255, 0.12);
+        }
+        .faq-question {
+            width: 100%;
+            padding: 18px 24px;
+            background: none;
+            border: none;
+            color: var(--white);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: inherit;
+            text-align: left;
+            transition: var(--transition);
+        }
+        .faq-question:hover {
+            color: var(--neon-blue);
+        }
+        .faq-question .arrow {
+            font-size: 1.2rem;
+            transition: var(--transition);
+            color: var(--neon-blue);
+        }
+        .faq-item.open .faq-question .arrow {
+            transform: rotate(180deg);
+        }
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, padding 0.3s ease;
+            padding: 0 24px;
+            color: rgba(255, 255, 255, 0.65);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+        .faq-item.open .faq-answer {
+            max-height: 300px;
+            padding: 0 24px 22px;
+        }
+
+        /* ===== CONTACT CARDS ===== */
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .contact-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 24px 20px;
+            text-align: center;
+            transition: var(--transition);
+        }
+        .contact-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(0, 212, 255, 0.2);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        }
+        .contact-card .emoji {
+            font-size: 2.4rem;
+            margin-bottom: 6px;
+        }
+        .contact-card h4 {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        .contact-card p {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.5);
+            word-break: break-all;
+        }
+        .contact-card a {
+            color: var(--neon-blue);
+            font-weight: 500;
+            transition: var(--transition);
+        }
+        .contact-card a:hover {
+            color: var(--purple-light);
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            padding: 50px 0 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        .footer .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+            text-align: center;
+        }
+        .footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px 30px;
+            justify-content: center;
+        }
+        .footer-links a {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.45);
+            transition: var(--transition);
+        }
+        .footer-links a:hover {
+            color: var(--neon-blue);
+        }
+
+        /* ===== FOOTER SOCIAL ===== */
+        .footer-social {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 28px 40px;
+            margin-bottom: 16px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .footer-social .social-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: var(--transition);
+            text-decoration: none;
+            padding: 6px 14px;
+            border-radius: 40px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid transparent;
+        }
+        .footer-social .social-link:hover {
+            transform: translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .footer-social .social-link svg {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            fill: none;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+        .footer-social .social-link.instagram:hover {
+            color: #E4405F;
+        }
+        .footer-social .social-link.telegram:hover {
+            color: #0088cc;
+        }
+        .footer-social .social-link.whatsapp:hover {
+            color: #25D366;
+        }
+
+        .footer-copy {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.25);
+            letter-spacing: 1px;
+        }
+
+        /* ===== FLOATING BUTTONS ===== */
+        .float-buttons {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 999;
+        }
+        .float-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: none;
+            font-size: 1.6rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            color: #fff;
+            text-decoration: none;
+        }
+        .float-btn.whatsapp {
+            background: #25d366;
+        }
+        .float-btn.whatsapp:hover {
+            transform: scale(1.10);
+            box-shadow: 0 8px 40px rgba(37, 211, 102, 0.35);
+        }
+        .float-btn.telegram {
+            background: #0088cc;
+        }
+        .float-btn.telegram:hover {
+            transform: scale(1.10);
+            box-shadow: 0 8px 40px rgba(0, 136, 204, 0.35);
+        }
+
+        /* ===== SCROLL ANIMATIONS ===== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ===== DARK MODE OVERRIDES ===== */
+        body.light-mode {
+            --black: #f5f5f7;
+            --black-light: #e8e8ed;
+            --black-card: #ffffff;
+            --white: #111;
+            --glass-bg: rgba(255, 255, 255, 0.70);
+            --glass-border: rgba(0, 0, 0, 0.08);
+            --shadow-glow: 0 0 40px rgba(0, 212, 255, 0.04);
+        }
+        body.light-mode .navbar {
+            background: rgba(245, 245, 247, 0.88);
+            border-bottom-color: rgba(0, 0, 0, 0.04);
+        }
+        body.light-mode .navbar.scrolled {
+            background: rgba(245, 245, 247, 0.96);
+        }
+        body.light-mode .app-card {
+            background: rgba(255, 255, 255, 0.75);
+        }
+        body.light-mode .app-card .features li {
+            background: rgba(0, 0, 0, 0.04);
+            border-color: rgba(0, 0, 0, 0.06);
+        }
+        body.light-mode .feature-card {
+            background: rgba(255, 255, 255, 0.75);
+        }
+        body.light-mode .feature-card .feature-list li {
+            color: rgba(0, 0, 0, 0.7);
+        }
+        body.light-mode .feature-card .feature-list li strong {
+            color: #111;
+        }
+        body.light-mode #order-form {
+            background: rgba(255, 255, 255, 0.75);
+        }
+        body.light-mode #order-form input,
+        body.light-mode #order-form select {
+            background: rgba(0, 0, 0, 0.04);
+            color: #111;
+            border-color: rgba(0, 0, 0, 0.08);
+        }
+        body.light-mode .faq-item {
+            background: rgba(255, 255, 255, 0.70);
+        }
+        body.light-mode .contact-card {
+            background: rgba(255, 255, 255, 0.70);
+        }
+        body.light-mode .footer {
+            border-top-color: rgba(0, 0, 0, 0.06);
+        }
+        body.light-mode .footer-social .social-link {
+            background: rgba(0, 0, 0, 0.02);
+        }
+        body.light-mode .footer-social .social-link:hover {
+            background: rgba(0, 0, 0, 0.04);
+        }
+        body.light-mode .hero-content h1 {
+            background: linear-gradient(135deg, #111 40%, var(--neon-blue), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        body.light-mode .section-header h2 {
+            background: linear-gradient(135deg, #111, var(--neon-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        body.light-mode .qr-wrapper {
+            background: rgba(0, 0, 0, 0.04);
+        }
+        body.light-mode .qr-wrapper img {
+            background: #fff;
+            border-color: rgba(0, 0, 0, 0.06);
+        }
+        body.light-mode .upi-box {
+            background: rgba(0, 0, 0, 0.02);
+            border-color: rgba(0, 0, 0, 0.06);
+        }
+        body.light-mode .upi-box .upi-id {
+            background: rgba(0, 0, 0, 0.04);
+            color: var(--neon-blue-dark);
+        }
+        body.light-mode .upi-box .upi-copy-btn {
+            background: rgba(0, 0, 0, 0.04);
+            color: #111;
+        }
+        body.light-mode .upi-box .upi-copy-btn:hover {
+            background: var(--neon-blue);
+            color: #fff;
+        }
+        body.light-mode .upi-box .upi-open-btn {
+            color: var(--neon-blue-dark);
+        }
+        body.light-mode .utr-hint {
+            color: rgba(0, 0, 0, 0.4);
+        }
+        body.light-mode .utr-hint .copy-hint {
+            color: var(--neon-blue-dark);
+        }
+        body.light-mode .order-divider {
+            color: rgba(0, 0, 0, 0.15);
+        }
+        body.light-mode .order-divider::before,
+        body.light-mode .order-divider::after {
+            background: rgba(0, 0, 0, 0.06);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 992px) {
+            .hero .container {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+            .hero-content p {
+                margin-left: auto;
+                margin-right: auto;
+            }
+            .hero-buttons {
+                justify-content: center;
+            }
+            .hero-visual .glass-sphere {
+                width: 200px;
+                height: 200px;
+                font-size: 4.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hamburger {
+                display: flex;
+            }
+            .nav-links {
+                display: none;
+                width: 100%;
+                flex-direction: column;
+                align-items: center;
+                padding: 16px 0 6px;
+                gap: 4px;
+                background: rgba(10, 10, 10, 0.96);
+                backdrop-filter: blur(20px);
+                border-radius: 16px;
+                margin-top: 8px;
+                border: 1px solid rgba(255, 255, 255, 0.04);
+            }
+            .nav-links.open {
+                display: flex;
+            }
+            .nav-links a {
+                padding: 10px 20px;
+                width: 100%;
+                text-align: center;
+            }
+            .navbar .container {
+                flex-wrap: wrap;
+            }
+            .nav-actions {
+                margin-left: auto;
+            }
+            .hero {
+                padding: 120px 0 50px;
+            }
+            .section {
+                padding: 50px 0;
+            }
+            #order-form {
+                padding: 28px 18px;
+            }
+            .float-buttons {
+                bottom: 16px;
+                right: 16px;
+            }
+            .float-btn {
+                width: 48px;
+                height: 48px;
+                font-size: 1.3rem;
+            }
+            .apps-grid {
+                grid-template-columns: 1fr;
+                max-width: 400px;
+                margin: 0 auto;
+            }
+            .feature-grid {
+                grid-template-columns: 1fr;
+                max-width: 400px;
+                margin: 0 auto;
+            }
+            .contact-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .qr-wrapper img {
+                width: 170px;
+                height: 170px;
+            }
+            .upi-box {
+                flex-direction: column;
+                padding: 12px 16px;
+                border-radius: 20px;
+            }
+            .upi-box .upi-id {
+                font-size: 0.85rem;
+                width: 100%;
+                text-align: center;
+            }
+            .footer-social {
+                gap: 16px 20px;
+            }
+            .footer-social .social-link {
+                font-size: 0.75rem;
+                padding: 4px 10px;
+            }
+            .footer-social .social-link svg {
+                width: 18px;
+                height: 18px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero-content h1 {
+                font-size: 2rem;
+            }
+            .hero-visual .glass-sphere {
+                width: 150px;
+                height: 150px;
+                font-size: 3.2rem;
+            }
+            .btn {
+                padding: 12px 24px;
+                font-size: 0.85rem;
+            }
+            .contact-grid {
+                grid-template-columns: 1fr;
+            }
+            .qr-wrapper img {
+                width: 140px;
+                height: 140px;
+            }
+            .footer-social {
+                flex-direction: column;
+                align-items: center;
+                gap: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== LOADER ===== -->
+    <div id="loader">
+        <div class="loader-ring"></div>
+        <div class="loader-text">AI Store</div>
+    </div>
+
+    <!-- ===== CURSOR GLOW ===== -->
+    <div id="cursor-glow"></div>
+
+    <!-- ===== PARTICLES CANVAS ===== -->
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- ===== NAVBAR ===== -->
+    <nav class="navbar" id="navbar" role="navigation" aria-label="Main navigation">
+        <div class="container">
+            <a href="#" class="nav-logo" aria-label="AI Store Home">
+                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="12" y="18" width="40" height="28" rx="8" stroke="url(#logoGrad)" stroke-width="2.5" />
+                    <circle cx="24" cy="30" r="4" fill="url(#logoGrad)" />
+                    <circle cx="40" cy="30" r="4" fill="url(#logoGrad)" />
+                    <rect x="20" y="38" width="24" height="6" rx="3" fill="url(#logoGrad)" />
+                    <rect x="28" y="46" width="8" height="10" rx="3" fill="url(#logoGrad)" />
+                    <circle cx="32" cy="12" r="5" stroke="url(#logoGrad)" stroke-width="2" />
+                    <path d="M32 17v4M32 25v2M28 21l-4 4M36 21l4 4" stroke="url(#logoGrad)" stroke-width="1.5" stroke-linecap="round" />
+                    <defs>
+                        <linearGradient id="logoGrad" x1="0" y1="0" x2="64" y2="64">
+                            <stop offset="0%" stop-color="#00d4ff" />
+                            <stop offset="100%" stop-color="#7b2ffc" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <span>AI Store</span>
+            </a>
+
+            <ul class="nav-links" id="navLinks" role="menubar">
+                <li role="none"><a href="#home" role="menuitem" class="active">Home</a></li>
+                <li role="none"><a href="#apps" role="menuitem">Apps</a></li>
+                <li role="none"><a href="#features" role="menuitem">Features</a></li>
+                <li role="none"><a href="#order" role="menuitem">Buy</a></li>
+                <li role="none"><a href="#support" role="menuitem">Support</a></li>
+                <li role="none"><a href="#faq" role="menuitem">FAQ</a></li>
+                <li role="none"><a href="#privacy" role="menuitem">Privacy</a></li>
+                <li role="none"><a href="#terms" role="menuitem">Terms</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <button class="dark-toggle" id="darkToggle" aria-label="Toggle dark/light mode">🌙</button>
+                <button class="hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false">
+                    <span></span><span></span><span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ===== HERO ===== -->
+    <section class="hero" id="home">
+        <div class="container">
+            <div class="hero-content reveal">
+                <h1>India's Premium AI Assistant Store</h1>
+                <p>Buy Lifetime Premium AI Assistants with Instant Support — powered by next-gen intelligence.</p>
+                <div class="hero-buttons">
+                    <a href="#apps" class="btn btn-primary btn-glow">🚀 View Apps</a>
+                    <a href="#support" class="btn btn-secondary">💬 Customer Support</a>
+                </div>
+            </div>
+            <div class="hero-visual reveal">
+                <div class="glass-sphere">🧠</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== APPS ===== -->
+    <section class="section" id="apps">
+        <div class="container">
+            <div class="section-header reveal">
+                <h2>Premium AI Assistants & Combos</h2>
+                <p>Choose your lifetime companion — Single or Combo, built for speed, intelligence, and reliability.</p>
+            </div>
+            <div class="apps-grid">
+                <!-- SINGLE: Zara -->
+                <div class="app-card reveal">
+                    <div class="icon">🤖</div>
+                    <h3>Zara Assistant</h3>
+                    <div class="price">₹699</div>
+                    <div class="validity">✅ Lifetime Validity</div>
+                    <ul class="features">
+                        <li>AI Chat</li>
+                        <li>Voice Assistant</li>
+                        <li>Fast Response</li>
+                        <li>Premium Access</li>
+                    </ul>
+                    <a href="#order" class="btn btn-primary buy-btn" data-app="Zara Assistant" data-price="₹699">Buy Now →</a>
+                </div>
+
+                <!-- SINGLE: MAX -->
+                <div class="app-card reveal">
+                    <div class="icon">⚡</div>
+                    <h3>MAX Assistant</h3>
+                    <div class="price">₹599</div>
+                    <div class="validity">✅ Lifetime Validity</div>
+                    <ul class="features">
+                        <li>GPT AI</li>
+                        <li>Image AI</li>
+                        <li>Voice AI</li>
+                        <li>Premium Features</li>
+                    </ul>
+                    <a href="#order" class="btn btn-primary buy-btn" data-app="MAX Assistant" data-price="₹599">Buy Now →</a>
+                </div>
+
+                <!-- SINGLE: Jarvis -->
+                <div class="app-card reveal">
+                    <div class="icon">🧩</div>
+                    <h3>Jarvis Assistant</h3>
+                    <div class="price">₹399</div>
+                    <div class="validity">✅ Lifetime Validity</div>
+                    <ul class="features">
+                        <li>Personal Assistant</li>
+                        <li>Voice Commands</li>
+                        <li>Smart AI</li>
+                        <li>Premium Access</li>
+                    </ul>
+                    <a href="#order" class="btn btn-primary buy-btn" data-app="Jarvis Assistant" data-price="₹399">Buy Now →</a>
+                </div>
+
+                <!-- COMBO 1: Zara + MAX -->
+                <div class="app-card reveal">
+                    <span class="combo-badge">🔥 Combo</span>
+                    <div class="icon">🤖⚡</div>
+                    <h3>Zara + MAX</h3>
+                    <div class="price">₹1,099</div>
+                    <div class="validity">✅ Lifetime Validity</div>
+                    <ul class="features">
+                        <li>Zara AI + MAX AI</li>
+                        <li>Dual Assistant Power</li>
+                        <li>Full Phone Control</li>
+                        <li>Lifetime Access</li>
+                    </ul>
+                    <a href="#order" class="btn btn-primary buy-btn" data-app="Zara + MAX" data-price="₹1,099">Buy Now →</a>
+                </div>
+
+                <!-- COMBO 2: MAX + Jarvis -->
+                <div class="app-card reveal">
+                    <span class="combo-badge">🔥 Combo</span>
+                    <div class="icon">⚡🧩</div>
+                    <h3>MAX + Jarvis</h3>
+                    <div class="price">₹899</div>
+                    <div class="validity">✅ Lifetime Validity</div>
+                    <ul class="features">
+                        <li>MAX AI + Jarvis AI</li>
+                        <li>Ultimate Automation</li>
+                        <li>GPT + Smart Home</li>
+                        <li>Lifetime Access</li>
+                    </ul>
+                    <a href="#order" class="btn btn-primary buy-btn" data-app="MAX + Jarvis" data-price="₹899">Buy Now →</a>
+                </div>
+
+                <!-- COMBO 3: Zara + Jarvis -->
+                <div class="app-card reveal">
+                    <span class="combo-badge">🔥 Combo</span>
+                    <div class="icon">🤖🧩</div>
+                    <h3>Zara + Jarvis</h3>
+                    <div class="price">₹999</div>
+                    <div class="validity">✅ Lifetime Validity</div>
+                    <ul class="features">
+                        <li>Zara AI + Jarvis AI</li>
+                        <li>Best Value Combo</li>
+                        <li>Chat + Commands</li>
+                        <li>Lifetime Access</li>
+                    </ul>
+                    <a href="#order" class="btn btn-primary buy-btn" data-app="Zara + Jarvis" data-price="₹999">Buy Now →</a>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== FEATURES ===== -->
+    <section class="section" id="features">
+        <div class="container">
+            <div class="section-header reveal">
+                <h2>⚡ Full Phone Automation</h2>
+                <p>ये AI Assistants आपके पूरे फोन को हैंडल करते हैं – WhatsApp, Calls, Apps, सब कुछ!</p>
+            </div>
+            <div class="feature-grid">
+                <div class="feature-card reveal">
+                    <div class="feature-icon">🤖</div>
+                    <h3>Zara Assistant</h3>
+                    <div class="feature-tagline">Complete Phone Control</div>
+                    <ul class="feature-list">
+                        <li>📱 <strong>WhatsApp</strong> – Auto Read &amp; Reply <span class="badge">AI</span></li>
+                        <li>📞 <strong>Call Management</strong> – Pick / Reject / Dial</li>
+                        <li>⚙️ <strong>Full System</strong> – Open Apps, Set Reminders</li>
+                        <li>🧠 <strong>Smart AI Chat</strong> – Real-time assistance</li>
+                        <li>🔊 <strong>Voice Commands</strong> – Hands-free control</li>
+                    </ul>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="feature-icon">⚡</div>
+                    <h3>MAX Assistant</h3>
+                    <div class="feature-tagline">Ultimate AI Powerhouse</div>
+                    <ul class="feature-list">
+                        <li>📱 <strong>WhatsApp</strong> – Auto Read &amp; Reply <span class="badge">GPT</span></li>
+                        <li>📞 <strong>Call Management</strong> – Pick / Reject / Dial</li>
+                        <li>🖼️ <strong>Image AI</strong> – Generate &amp; Edit Images</li>
+                        <li>🗣️ <strong>Voice AI</strong> – Natural conversation</li>
+                        <li>🧠 <strong>GPT-4 Level</strong> – Advanced reasoning</li>
+                    </ul>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="feature-icon">🧩</div>
+                    <h3>Jarvis Assistant</h3>
+                    <div class="feature-tagline">Your Digital Butler</div>
+                    <ul class="feature-list">
+                        <li>📱 <strong>WhatsApp</strong> – Auto Read &amp; Reply <span class="badge">Smart</span></li>
+                        <li>📞 <strong>Call Management</strong> – Pick / Reject / Dial</li>
+                        <li>🏠 <strong>Smart Home</strong> – Control IoT devices</li>
+                        <li>📅 <strong>Daily Schedule</strong> – Manage tasks &amp; events</li>
+                        <li>🔊 <strong>Voice Commands</strong> – Seamless interaction</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== ORDER ===== -->
+    <section class="section" id="order">
+        <div class="container">
+            <div class="section-header reveal">
+                <h2>Complete Your Order</h2>
+                <p>Scan the QR code or use UPI ID to pay, then paste your UTR number below.</p>
+            </div>
+            <div id="order-form" class="reveal">
+                <div class="qr-wrapper">
+                    <div class="qr-label">
+                        📱 Scan to Pay
+                        <span class="badge" id="qrBadge">Zara Assistant · ₹699</span>
+                    </div>
+                    <img id="qrImage" src="" alt="UPI QR Code" loading="lazy" width="220" height="220" />
+                    <div class="upi-box">
+                        <span class="upi-label">💳 UPI ID</span>
+                        <span class="upi-id" id="upiIdDisplay" title="Click to copy" onclick="copyUPI()">7991163709@kotakbank</span>
+                        <button class="upi-copy-btn" onclick="copyUPI()">📋 Copy</button>
+                        <a href="#" id="upiPayLink" class="upi-open-btn" target="_blank">🔓 Pay ₹699 Now</a>
+                    </div>
+                    <div class="qr-sub"><strong id="qrPriceDisplay">₹699</strong> · Lifetime License · Secure Payment</div>
+                    <div class="qr-disclaimer">✅ QR scan करने पर सीधा PhonePe / GPay / Paytm / BHIM खुलेगा</div>
+                </div>
+                <div class="order-divider">⬇️ AFTER PAYMENT, FILL BELOW ⬇️</div>
+                <form id="orderForm" novalidate>
+                    <div class="form-group">
+                        <label for="fullName">Full Name <span class="required">*</span></label>
+                        <input type="text" id="fullName" placeholder="e.g. Rahul Sharma" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address <span class="required">*</span></label>
+                        <input type="email" id="email" placeholder="you@example.com" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="whatsapp">WhatsApp Number <span class="required">*</span></label>
+                        <input type="tel" id="whatsapp" placeholder="+91 98765 43210" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="selectedApp">Selected App / Combo <span class="required">*</span></label>
+                        <select id="selectedApp" required>
+                            <option value="Zara Assistant">Zara Assistant — ₹699</option>
+                            <option value="MAX Assistant">MAX Assistant — ₹599</option>
+                            <option value="Jarvis Assistant">Jarvis Assistant — ₹399</option>
+                            <option value="Zara + MAX">🔥 Zara + MAX — ₹1,099</option>
+                            <option value="MAX + Jarvis">🔥 MAX + Jarvis — ₹899</option>
+                            <option value="Zara + Jarvis">🔥 Zara + Jarvis — ₹999</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="utr">UTR / Transaction ID <span class="required">*</span></label>
+                        <input type="text" id="utr" placeholder="e.g. KOM123456789" required />
+                        <div class="utr-hint">
+                            <span>💡</span>
+                            <span>After payment, <strong class="copy-hint">copy</strong> the UTR number from your bank/UPI app and paste it here.</span>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-submit">📩 Submit &amp; Verify via WhatsApp</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== SUPPORT ===== -->
+    <section class="section" id="support">
+        <div class="container">
+            <div class="section-header reveal">
+                <h2>Customer Support</h2>
+                <p>Reach out to us anytime — we're here to help.</p>
+            </div>
+            <div class="contact-grid reveal">
+                <div class="contact-card">
+                    <div class="emoji">📱</div>
+                    <h4>WhatsApp</h4>
+                    <p><a href="https://wa.me/919633195536" target="_blank" rel="noopener">+91 9633195536</a></p>
+                </div>
+                <div class="contact-card">
+                    <div class="emoji">✈️</div>
+                    <h4>Telegram</h4>
+                    <p><a href="https://t.me/DRACOMOD1" target="_blank" rel="noopener">@DRACOMOD1</a></p>
+                </div>
+                <div class="contact-card">
+                    <div class="emoji">✉️</div>
+                    <h4>Email</h4>
+                    <p><a href="mailto:opgaming55b@gmail.com">opgaming55b@gmail.com</a></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== FAQ ===== -->
+    <section class="section" id="faq">
+        <div class="container">
+            <div class="section-header reveal">
+                <h2>Frequently Asked Questions</h2>
+                <p>Everything you need to know before buying.</p>
+            </div>
+            <div class="faq-list reveal">
+                <div class="faq-item">
+                    <button class="faq-question" aria-expanded="false">What is AI Store? <span class="arrow">▾</span></button>
+                    <div class="faq-answer">AI Store is India's premium platform for lifetime AI assistants. We offer Zara, MAX, and Jarvis — each packed with advanced AI capabilities.</div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" aria-expanded="false">How do I pay and get my license key? <span class="arrow">▾</span></button>
+                    <div class="faq-answer">Click "Buy Now" on any app, scan the QR code (which opens UPI app directly) or use the UPI ID. After payment, paste the UTR and submit – we'll verify & send your license key on WhatsApp.</div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" aria-expanded="false">Is the license really lifetime? <span class="arrow">▾</span></button>
+                    <div class="faq-answer">Yes! All our assistants come with a lifetime license — no recurring fees.</div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" aria-expanded="false">Which UPI apps are supported? <span class="arrow">▾</span></button>
+                    <div class="faq-answer">PhonePe, Google Pay, Paytm, BHIM, and all other UPI apps. The QR code is a standard UPI deep link.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== PRIVACY & TERMS ===== -->
+    <section class="section" id="privacy">
+        <div class="container">
+            <div class="section-header reveal">
+                <h2>Privacy Policy</h2>
+                <p>Your data is safe with us.</p>
+            </div>
+            <div style="max-width:760px;margin:0 auto;background:var(--glass-bg);backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:32px 28px;color:rgba(255,255,255,0.7);font-size:0.95rem;line-height:1.8;">
+                <p><strong>AI Store</strong> respects your privacy. We collect only the information you provide via the order form to process your order.</p>
+                <p style="margin-top:12px;">We do <strong>not</strong> share, sell, or rent your personal data to third parties.</p>
+            </div>
+        </div>
+    </section>
+    <section class="section" id="terms">
+        <div class="container">
+            <div class="section-header reveal">
+                <h2>Terms &amp; Conditions</h2>
+                <p>Please read carefully before purchasing.</p>
+            </div>
+            <div style="max-width:760px;margin:0 auto;background:var(--glass-bg);backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:32px 28px;color:rgba(255,255,255,0.7);font-size:0.95rem;line-height:1.8;">
+                <p>By purchasing any AI Assistant from <strong>AI Store</strong>, you agree to the following terms:</p>
+                <ul style="list-style:disc;padding-left:24px;margin:12px 0;">
+                    <li>All sales are final. Since we deliver digital license keys, no refunds are issued after the key is sent.</li>
+                    <li>License keys are for <strong>single-user</strong> use only.</li>
+                    <li>We reserve the right to suspend access if we detect fraudulent activity.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-links">
+                <a href="#home">Home</a>
+                <a href="#apps">Apps</a>
+                <a href="#features">Features</a>
+                <a href="#order">Buy</a>
+                <a href="#support">Support</a>
+                <a href="#faq">FAQ</a>
+                <a href="#privacy">Privacy</a>
+                <a href="#terms">Terms</a>
+            </div>
+
+            <div class="footer-social">
+                <a href="https://instagram.com/rdxgamer102" target="_blank" rel="noopener" class="social-link instagram">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="2" width="20" height="20" rx="5"/>
+                        <circle cx="12" cy="12" r="5"/>
+                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+                    </svg>
+                    @rdxgamer102
+                </a>
+                <a href="https://t.me/DRACOMOD1" target="_blank" rel="noopener" class="social-link telegram">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.5 4.5L2 12l7 4 11-9-2 13-9-7"/>
+                    </svg>
+                    @DRACOMOD1
+                </a>
+                <a href="https://wa.me/919633195536" target="_blank" rel="noopener" class="social-link whatsapp">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+                    </svg>
+                    +91 9633195536
+                </a>
+            </div>
+
+            <div class="footer-copy">
+                © 2026 AI Store &bull; All Rights Reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- ===== FLOATING BUTTONS ===== -->
+    <div class="float-buttons">
+        <a href="https://wa.me/919633195536" target="_blank" rel="noopener" class="float-btn whatsapp" aria-label="Chat on WhatsApp">💬</a>
+        <a href="https://t.me/DRACOMOD1" target="_blank" rel="noopener" class="float-btn telegram" aria-label="Chat on Telegram">✈️</a>
+    </div>
+
+    <!-- ===== JAVASCRIPT ===== -->
+    <script>
+        (function() {
+            'use strict';
+
+            // Loader
+            window.addEventListener('load', function() {
+                const loader = document.getElementById('loader');
+                setTimeout(function() {
+                    loader.classList.add('hidden');
+                }, 1200);
+            });
+
+            // Particles (same as before)
+            const canvas = document.getElementById('particles-canvas');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            let w, h;
+
+            function resizeCanvas() {
+                w = canvas.width = window.innerWidth;
+                h = canvas.height = window.innerHeight;
+            }
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * w;
+                    this.y = Math.random() * h;
+                    this.size = Math.random() * 1.8 + 0.6;
+                    this.speedX = (Math.random() - 0.5) * 0.35;
+                    this.speedY = (Math.random() - 0.5) * 0.35;
+                    this.opacity = Math.random() * 0.5 + 0.2;
+                }
+                update() {
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+                    if (this.x < 0 || this.x > w) this.speedX *= -1;
+                    if (this.y < 0 || this.y > h) this.speedY *= -1;
+                }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(0, 212, 255, ' + this.opacity + ')';
+                    ctx.fill();
+                }
+            }
+
+            const particleCount = Math.min(120, Math.floor((w * h) / 8000));
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+
+            function drawParticles() {
+                ctx.clearRect(0, 0, w, h);
+                for (let p of particles) {
+                    p.update();
+                    p.draw();
+                }
+                for (let i = 0; i < particles.length; i++) {
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < 130) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = 'rgba(0, 212, 255, ' + (0.08 * (1 - dist / 130)) + ')';
+                            ctx.lineWidth = 0.6;
+                            ctx.stroke();
+                        }
+                    }
+                }
+                requestAnimationFrame(drawParticles);
+            }
+            drawParticles();
+
+            // Cursor Glow
+            const cursorGlow = document.getElementById('cursor-glow');
+            document.addEventListener('mousemove', function(e) {
+                cursorGlow.style.left = e.clientX + 'px';
+                cursorGlow.style.top = e.clientY + 'px';
+            });
+
+            // Navbar scroll
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 60) navbar.classList.add('scrolled');
+                else navbar.classList.remove('scrolled');
+            });
+
+            // Hamburger
+            const hamburger = document.getElementById('hamburger');
+            const navLinks = document.getElementById('navLinks');
+            hamburger.addEventListener('click', function() {
+                const isOpen = navLinks.classList.toggle('open');
+                hamburger.classList.toggle('active');
+                hamburger.setAttribute('aria-expanded', isOpen);
+            });
+            navLinks.querySelectorAll('a').forEach(function(link) {
+                link.addEventListener('click', function() {
+                    navLinks.classList.remove('open');
+                    hamburger.classList.remove('active');
+                    hamburger.setAttribute('aria-expanded', 'false');
+                });
+            });
+
+            // Dark Mode
+            const darkToggle = document.getElementById('darkToggle');
+            let isDark = true;
+            darkToggle.addEventListener('click', function() {
+                isDark = !isDark;
+                document.body.classList.toggle('light-mode', !isDark);
+                darkToggle.textContent = isDark ? '🌙' : '☀️';
+                localStorage.setItem('ai-store-theme', isDark ? 'dark' : 'light');
+            });
+            const savedTheme = localStorage.getItem('ai-store-theme');
+            if (savedTheme === 'light') {
+                isDark = false;
+                document.body.classList.add('light-mode');
+                darkToggle.textContent = '☀️';
+            }
+
+            // Scroll Reveal
+            const revealElements = document.querySelectorAll('.reveal');
+            const revealObserver = new IntersectionObserver(function(entries) {
+                for (let entry of entries) {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                }
+            }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+            for (let el of revealElements) {
+                revealObserver.observe(el);
+            }
+
+            // FAQ Accordion
+            const faqItems = document.querySelectorAll('.faq-item');
+            for (let item of faqItems) {
+                const question = item.querySelector('.faq-question');
+                question.addEventListener('click', function() {
+                    const isOpen = item.classList.contains('open');
+                    for (let other of faqItems) {
+                        other.classList.remove('open');
+                        other.querySelector('.faq-question').setAttribute('aria-expanded', 'false');
+                    }
+                    if (!isOpen) {
+                        item.classList.add('open');
+                        question.setAttribute('aria-expanded', 'true');
+                    }
+                });
+            }
+
+            // ===== DYNAMIC QR & UPI (with Combos) =====
+            const upiId = '7991163709@kotakbank';
+            const qrImage = document.getElementById('qrImage');
+            const qrBadge = document.getElementById('qrBadge');
+            const qrPriceDisplay = document.getElementById('qrPriceDisplay');
+            const upiPayLink = document.getElementById('upiPayLink');
+            const appSelect = document.getElementById('selectedApp');
+            const QR_API = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=';
+
+            function updatePayment() {
+                const selected = appSelect.value;
+                let amount = 699;
+                let priceStr = '₹699';
+                let appName = 'Zara Assistant';
+
+                // Map selections to prices
+                switch (selected) {
+                    case 'Zara Assistant':
+                        amount = 699;
+                        priceStr = '₹699';
+                        appName = 'Zara Assistant';
+                        break;
+                    case 'MAX Assistant':
+                        amount = 599;
+                        priceStr = '₹599';
+                        appName = 'MAX Assistant';
+                        break;
+                    case 'Jarvis Assistant':
+                        amount = 399;
+                        priceStr = '₹399';
+                        appName = 'Jarvis Assistant';
+                        break;
+                    case 'Zara + MAX':
+                        amount = 1099;
+                        priceStr = '₹1,099';
+                        appName = 'Zara + MAX';
+                        break;
+                    case 'MAX + Jarvis':
+                        amount = 899;
+                        priceStr = '₹899';
+                        appName = 'MAX + Jarvis';
+                        break;
+                    case 'Zara + Jarvis':
+                        amount = 999;
+                        priceStr = '₹999';
+                        appName = 'Zara + Jarvis';
+                        break;
+                    default:
+                        amount = 699;
+                        priceStr = '₹699';
+                        appName = 'Zara Assistant';
+                }
+
+                const upiLink = 'upi://pay?pa=' + upiId + '&pn=AI%20Store&am=' + amount + '&cu=INR';
+                qrImage.src = QR_API + encodeURIComponent(upiLink);
+                qrBadge.textContent = appName + ' · ' + priceStr;
+                qrPriceDisplay.textContent = priceStr;
+                upiPayLink.href = upiLink;
+                upiPayLink.textContent = '🔓 Pay ' + priceStr + ' Now';
+            }
+            appSelect.addEventListener('change', updatePayment);
+            updatePayment();
+
+            // UPI Copy
+            window.copyUPI = function() {
+                const upi = upiId;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(upi).then(() => alert('✅ UPI ID copied!\n\n' + upi)).catch(() =>
+                        fallbackCopy(upi));
+                } else { fallbackCopy(upi); }
+            };
+
+            function fallbackCopy(text) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                try { document.execCommand('copy');
+                    alert('✅ UPI ID copied!\n\n' + text); } catch (e) { alert('⚠️ Copy manually: ' + text); }
+                document.body.removeChild(ta);
+            }
+
+            // Form Submit (with Combos)
+            const orderForm = document.getElementById('orderForm');
+            orderForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const name = document.getElementById('fullName').value.trim();
+                const email = document.getElementById('email').value.trim();
+                const whatsapp = document.getElementById('whatsapp').value.trim();
+                const app = document.getElementById('selectedApp').value;
+                const utr = document.getElementById('utr').value.trim();
+                if (!name || !email || !whatsapp || !app || !utr) { alert('⚠️ Fill all fields.'); return; }
+
+                let price = '₹699';
+                if (app === 'MAX Assistant') price = '₹599';
+                else if (app === 'Jarvis Assistant') price = '₹399';
+                else if (app === 'Zara + MAX') price = '₹1,099';
+                else if (app === 'MAX + Jarvis') price = '₹899';
+                else if (app === 'Zara + Jarvis') price = '₹999';
+
+                const msg = 'Hello AI Store,%0A%0ANew Order%0AName: ' + encodeURIComponent(name) + '%0AEmail: ' +
+                    encodeURIComponent(email) + '%0AWhatsApp: ' + encodeURIComponent(whatsapp) + '%0AApp: ' +
+                    encodeURIComponent(app) + '%0AAmount: ' + encodeURIComponent(price) + '%0AUTR: ' + encodeURIComponent(
+                        utr) +
+                    '%0A%0APlease verify my payment and send my license key.';
+                window.open('https://wa.me/919633195536?text=' + msg, '_blank');
+                alert('✅ Order sent via WhatsApp.');
+            });
+
+            // Buy Now buttons (supports combos)
+            document.querySelectorAll('.buy-btn').forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    const appName = this.getAttribute('data-app');
+                    const select = document.getElementById('selectedApp');
+                    for (let opt of select.options) { if (opt.value === appName) { select.value = appName; break; } }
+                    updatePayment();
+                    document.getElementById('order').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    setTimeout(function() { document.getElementById('utr').focus(); }, 800);
+                });
+            });
+
+            // Smooth scroll nav
+            document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+                anchor.addEventListener('click', function(e) {
+                    const targetId = this.getAttribute('href');
+                    if (targetId === '#') return;
+                    const targetEl = document.querySelector(targetId);
+                    if (targetEl) {
+                        e.preventDefault();
+                        const offset = 80;
+                        const top = targetEl.getBoundingClientRect().top + window.pageYOffset - offset;
+                        window.scrollTo({ top: top, behavior: 'smooth' });
+                    }
+                });
+            });
+
+            // UTR paste feedback
+            document.getElementById('utr').addEventListener('paste', function() {
+                this.style.borderColor = 'var(--neon-blue)';
+                setTimeout(() => this.style.borderColor = '', 1500);
+            });
+
+            console.log('🚀 AI Store – 3 Combos added: Zara+MAX (1099), MAX+Jarvis (899), Zara+Jarvis (999)');
+        })();
+    </script>
+
+</body>
+</html>
